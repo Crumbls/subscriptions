@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Crumbls\Subscriptions\Traits;
 
 use Carbon\Carbon;
+use Crumbls\Subscriptions\Exceptions\SubscriberLimitReachedException;
 use Crumbls\Subscriptions\Models\Plan;
 use Crumbls\Subscriptions\Models\PlanSubscription;
 use Crumbls\Subscriptions\Services\Period;
@@ -82,9 +83,19 @@ trait HasPlanSubscriptions
 
     /**
      * Subscribe to a new plan.
+     *
+     * @throws SubscriberLimitReachedException
      */
     public function newPlanSubscription(string $subscription, Plan $plan, ?Carbon $startDate = null): PlanSubscription
     {
+        if (! $plan->canAcceptNewSubscriber()) {
+            throw new SubscriberLimitReachedException(
+                $plan,
+                $plan->active_subscribers_limit,
+                $plan->activeSubscriberCount(),
+            );
+        }
+
         $trial = new Period($plan->trial_interval ?? 'day', $plan->trial_period ?? 0, $startDate ?? now());
         $period = new Period($plan->invoice_interval, $plan->invoice_period, $trial->getEndDate());
 

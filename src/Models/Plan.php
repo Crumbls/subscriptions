@@ -172,6 +172,25 @@ class Plan extends Model implements Sortable
         return $this->grace_period && $this->grace_interval;
     }
 
+    public function hasSubscriberLimit(): bool
+    {
+        return $this->active_subscribers_limit !== null && $this->active_subscribers_limit > 0;
+    }
+
+    public function activeSubscriberCount(): int
+    {
+        return $this->subscriptions()->where('ends_at', '>', now())->count();
+    }
+
+    public function canAcceptNewSubscriber(): bool
+    {
+        if (! $this->hasSubscriberLimit()) {
+            return true;
+        }
+
+        return $this->activeSubscriberCount() < $this->active_subscribers_limit;
+    }
+
     public function getFeatureBySlug(string $featureSlug): ?PlanFeature
     {
         return $this->features()->where('slug', $featureSlug)->first();

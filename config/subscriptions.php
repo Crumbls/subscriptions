@@ -7,6 +7,9 @@ return [
     // Automatically load migrations from the package
     'autoload_migrations' => true,
 
+    // Broadcast subscription events (requires a broadcast driver)
+    'broadcast_events' => false,
+
     // Database table names
     'tables' => [
         'plans' => 'plans',
