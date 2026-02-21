@@ -298,7 +298,7 @@ class PlanSubscription extends Model
 
     public function recordFeatureUsage(string $featureSlug, int $uses = 1, bool $incremental = true): PlanSubscriptionUsage
     {
-        /** @var PlanFeature $feature */
+        /** @var Feature $feature */
         $feature = $this->plan->features()->where('slug', $featureSlug)->firstOrFail();
 
         /** @var PlanSubscriptionUsage $usage */
@@ -371,10 +371,10 @@ class PlanSubscription extends Model
 
     public function getFeatureValue(string $featureSlug): mixed
     {
-        /** @var PlanFeature|null $feature */
+        /** @var Feature|null $feature */
         $feature = $this->plan->features()->where('slug', $featureSlug)->first();
 
-        return $feature?->value;
+        return $feature?->pivot?->value;
     }
 
     // ── Internal ─────────────────────────────────────────────────────

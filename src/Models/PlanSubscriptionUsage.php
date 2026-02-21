@@ -50,7 +50,7 @@ class PlanSubscriptionUsage extends Model
 
     public function feature(): BelongsTo
     {
-        return $this->belongsTo(config('subscriptions.models.plan_feature'), 'feature_id');
+        return $this->belongsTo(config('subscriptions.models.feature', Feature::class), 'feature_id');
     }
 
     public function subscription(): BelongsTo
@@ -60,7 +60,7 @@ class PlanSubscriptionUsage extends Model
 
     public function scopeByFeatureSlug(Builder $builder, string $featureSlug): Builder
     {
-        $model = config('subscriptions.models.plan_feature');
+        $model = config('subscriptions.models.feature', Feature::class);
         $feature = $model::where('slug', $featureSlug)->first();
 
         return $builder->where('feature_id', $feature?->getKey());

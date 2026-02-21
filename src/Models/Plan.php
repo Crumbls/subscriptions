@@ -8,6 +8,7 @@ use Crumbls\Subscriptions\Enums\Interval;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\EloquentSortable\Sortable;
@@ -102,7 +103,7 @@ class Plan extends Model implements Sortable
     protected static function booted(): void
     {
         static::deleted(function (Plan $plan): void {
-            $plan->features()->delete();
+            $plan->features()->detach();
             $plan->subscriptions()->delete();
         });
     }
@@ -115,13 +116,18 @@ class Plan extends Model implements Sortable
             ->saveSlugsTo('slug');
     }
 
-    /** @return HasMany<PlanFeature, $this> */
-    public function features(): HasMany
+    /** @return BelongsToMany<Feature, $this> */
+    public function features(): BelongsToMany
     {
-        /** @var class-string<PlanFeature> $model */
-        $model = config('subscriptions.models.plan_feature', PlanFeature::class);
-
-        return $this->hasMany($model, 'plan_id');
+        return $this->belongsToMany(
+            config('subscriptions.models.feature', Feature::class),
+            config('subscriptions.tables.plan_features', 'plan_features'),
+            'plan_id',
+            'feature_id',
+        )
+            ->using(config('subscriptions.models.plan_feature', PlanFeature::class))
+            ->withPivot('value', 'sort_order')
+            ->withTimestamps();
     }
 
     /** @return HasMany<PlanSubscription, $this> */
@@ -191,7 +197,7 @@ class Plan extends Model implements Sortable
         return $this->activeSubscriberCount() < $this->active_subscribers_limit;
     }
 
-    public function getFeatureBySlug(string $featureSlug): ?PlanFeature
+    public function getFeatureBySlug(string $featureSlug): ?Feature
     {
         return $this->features()->where('slug', $featureSlug)->first();
     }
