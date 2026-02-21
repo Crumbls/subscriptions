@@ -1,6 +1,7 @@
-/build
-/vendor
-/node_modules
+/vendor/
+/node_modules/
+.phpunit.result.cache
+.phpunit.cache/
 composer.lock
-composer.phar
-phpunit.xml
+.idea/
+.DS_Store
