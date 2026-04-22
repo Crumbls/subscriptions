@@ -2,7 +2,7 @@
 
 A flexible plans and subscription management system for Laravel. Manage SaaS plans, features, and subscriber usage tracking without coupling to any payment provider.
 
-> **Inspired by** [rinvex/laravel-subscriptions](https://github.com/rinvex/laravel-subscriptions), which is now abandoned. This package modernizes the codebase for Laravel 11/12, PHP 8.2+, and current Laravel conventions.
+> **Inspired by** [rinvex/laravel-subscriptions](https://github.com/rinvex/laravel-subscriptions), which is now abandoned. This package modernizes the codebase for Laravel 11/12/13, PHP 8.3+, and current Laravel conventions.
 
 ## Features
 
@@ -21,8 +21,8 @@ A flexible plans and subscription management system for Laravel. Manage SaaS pla
 
 ## Requirements
 
-- PHP 8.2+
-- Laravel 11 or 12
+- PHP 8.3+
+- Laravel 11, 12, or 13
 
 ## Installation
 

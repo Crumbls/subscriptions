@@ -12,7 +12,7 @@ return RectorConfig::configure()
 	    __DIR__ . '/src',
 	    __DIR__ . '/tests',
     ])
-    ->withPhpSets(php82: true)
+    ->withPhpSets(php83: true)
 	->withPreparedSets(
 		deadCode: true,
 		codeQuality: true,
@@ -26,6 +26,8 @@ return RectorConfig::configure()
 	])
     ->withSets([
         LaravelSetList::LARAVEL_110,
+        LaravelSetList::LARAVEL_120,
+        LaravelSetList::LARAVEL_130,
     ])
     ->withTypeCoverageLevel(5)
 //    ->withDeadCodeLevel(5)
