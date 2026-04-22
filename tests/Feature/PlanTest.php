@@ -63,19 +63,18 @@ it('can have features', function (): void {
     $plan->features()->create([
         'name' => 'API Calls',
         'slug' => 'api-calls',
-        'value' => '1000',
         'resettable_period' => 1,
         'resettable_interval' => 'month',
-    ]);
+    ], ['value' => '1000']);
 
     expect($plan->features)->toHaveCount(1)
-        ->and($plan->getFeatureBySlug('api-calls')->value)->toBe('1000');
+        ->and($plan->getFeatureBySlug('api-calls')->pivot->value)->toBe('1000');
 });
 
 it('cascades deletes to features and subscriptions', function (): void {
     $plan = Plan::create(['name' => 'Deletable', 'price' => 10, 'signup_fee' => 0, 'currency' => 'USD', 'invoice_period' => 1, 'invoice_interval' => 'month']);
 
-    $plan->features()->create(['name' => 'Feat', 'slug' => 'feat', 'value' => '1']);
+    $plan->features()->create(['name' => 'Feat', 'slug' => 'feat'], ['value' => '1']);
 
     $plan->delete();
 

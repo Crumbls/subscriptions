@@ -18,22 +18,19 @@ beforeEach(function (): void {
     $this->plan->features()->create([
         'name' => 'API Calls',
         'slug' => 'api-calls',
-        'value' => '100',
         'resettable_period' => 1,
         'resettable_interval' => 'month',
-    ]);
+    ], ['value' => '100']);
 
     $this->plan->features()->create([
         'name' => 'SSL',
         'slug' => 'ssl',
-        'value' => 'true',
-    ]);
+    ], ['value' => 'true']);
 
     $this->plan->features()->create([
         'name' => 'Disabled',
         'slug' => 'disabled-feature',
-        'value' => 'false',
-    ]);
+    ], ['value' => 'false']);
 
     $this->subscription = $this->user->newPlanSubscription('main', $this->plan);
 });
@@ -103,18 +100,19 @@ it('gets feature value', function (): void {
 });
 
 it('resets usage when period expires', function (): void {
+    // valid_until is derived from the subscription's created_at, so freeze
+    // time before creating a fresh subscription for deterministic math.
     Carbon::setTestNow('2026-03-01 00:00:00');
 
-    $this->subscription->recordFeatureUsage('api-calls', 50);
+    $subscription = $this->user->newPlanSubscription('resets', $this->plan);
+    $subscription->recordFeatureUsage('api-calls', 50);
 
-    // Jump past the reset period
+    // Jump past the reset period (one month after created_at = 2026-04-01)
     Carbon::setTestNow('2026-04-02 00:00:00');
 
-    // Usage should show as expired (0)
-    expect($this->subscription->getFeatureUsage('api-calls'))->toBe(0);
+    expect($subscription->getFeatureUsage('api-calls'))->toBe(0);
 
-    // Recording again should reset the counter
-    $usage = $this->subscription->recordFeatureUsage('api-calls', 5);
+    $usage = $subscription->recordFeatureUsage('api-calls', 5);
     expect($usage->used)->toBe(5);
 
     Carbon::setTestNow();

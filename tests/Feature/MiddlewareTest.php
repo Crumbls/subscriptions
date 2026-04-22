@@ -84,10 +84,9 @@ it('allows access when feature is available', function () {
     $this->plan->features()->create([
         'name' => 'API Calls',
         'slug' => 'api-calls',
-        'value' => '100',
         'resettable_period' => 1,
         'resettable_interval' => 'month',
-    ]);
+    ], ['value' => '100']);
 
     $this->user->newPlanSubscription('main', $this->plan);
 
@@ -101,10 +100,9 @@ it('denies access when feature is exhausted', function () {
     $this->plan->features()->create([
         'name' => 'API Calls',
         'slug' => 'api-calls',
-        'value' => '1',
         'resettable_period' => 1,
         'resettable_interval' => 'month',
-    ]);
+    ], ['value' => '1']);
 
     $sub = $this->user->newPlanSubscription('main', $this->plan);
     $sub->recordFeatureUsage('api-calls', 1);
