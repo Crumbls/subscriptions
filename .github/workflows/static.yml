@@ -1,0 +1,41 @@
+name: Static analysis
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  pint:
+    runs-on: ubuntu-latest
+    name: Pint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+      - run: composer install --prefer-dist --no-interaction
+      - run: vendor/bin/pint --test
+
+  phpstan:
+    runs-on: ubuntu-latest
+    name: PHPStan
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+      - run: composer install --prefer-dist --no-interaction
+      - run: vendor/bin/phpstan analyse --memory-limit=1G --no-progress
+
+  rector:
+    runs-on: ubuntu-latest
+    name: Rector
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+      - run: composer install --prefer-dist --no-interaction
+      - run: vendor/bin/rector --dry-run --no-progress-bar
