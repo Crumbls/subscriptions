@@ -27,10 +27,21 @@ trait HasPlanSubscriptions
 
     /**
      * Get all active subscriptions (not ended, or on trial/grace).
+     *
+     * Non-ended subs match directly in SQL. Grace-period subs (ended
+     * but within the plan's grace window) need the per-row PHP check,
+     * so they are filtered after hydration.
      */
     public function activePlanSubscriptions(): Collection
     {
-        return $this->planSubscriptions->reject->inactive();
+        return $this->planSubscriptions()
+            ->where(fn ($q) => $q
+                ->where('ends_at', '>', now())
+                ->orWhereNull('ends_at'))
+            ->get()
+            ->concat($this->graceCandidateSubscriptions())
+            ->reject->inactive()
+            ->values();
     }
 
     /**
@@ -43,13 +54,13 @@ trait HasPlanSubscriptions
 
     /**
      * Get the most recent active subscription regardless of slug.
+     *
+     * Uses the canonical `active()` definition, so a subscription on its
+     * grace period is still "current".
      */
     public function currentSubscription(): ?PlanSubscription
     {
-        return $this->planSubscriptions()
-            ->where('ends_at', '>', now())
-            ->latest('id')
-            ->first();
+        return $this->activePlanSubscriptions()->sortByDesc('id')->first();
     }
 
     /**
@@ -57,8 +68,9 @@ trait HasPlanSubscriptions
      */
     public function subscribedPlans(): Collection
     {
-        $planIds = $this->planSubscriptions->reject->inactive()->pluck('plan_id')->unique();
+        $planIds = $this->activePlanSubscriptions()->pluck('plan_id')->unique()->values();
 
+        /** @var class-string<Plan> $model */
         $model = config('subscriptions.models.plan');
 
         return $model::whereIn('id', $planIds)->get();
@@ -79,7 +91,40 @@ trait HasPlanSubscriptions
      */
     public function hasActiveSubscription(): bool
     {
-        return $this->planSubscriptions->contains(fn ($sub) => $sub->active());
+        $hasNonEnded = $this->planSubscriptions()
+            ->where('ends_at', '>', now())
+            ->exists();
+
+        if ($hasNonEnded) {
+            return true;
+        }
+
+        return $this->graceCandidateSubscriptions()
+            ->contains(fn (PlanSubscription $sub) => $sub->onGracePeriod());
+    }
+
+    /**
+     * Subscriptions ended recently enough that they could plausibly still
+     * be within a grace period. We use the largest grace window configured
+     * on any of the subscriber's plans as the lookback horizon.
+     */
+    protected function graceCandidateSubscriptions(): Collection
+    {
+        return $this->planSubscriptions()
+            ->whereNotNull('ends_at')
+            ->where('ends_at', '<=', now())
+            ->whereHas('plan', fn ($q) => $q->where('grace_period', '>', 0))
+            ->get();
+    }
+
+    /**
+     * Subscribe to a new plan. Friendly alias for {@see newPlanSubscription()}.
+     *
+     * @throws SubscriberLimitReachedException
+     */
+    public function subscribe(string $name, Plan $plan, ?Carbon $startDate = null): PlanSubscription
+    {
+        return $this->newPlanSubscription($name, $plan, $startDate);
     }
 
     /**
@@ -87,9 +132,9 @@ trait HasPlanSubscriptions
      *
      * @throws SubscriberLimitReachedException
      */
-    public function newPlanSubscription(string $subscription, Plan $plan, ?Carbon $startDate = null): PlanSubscription
+    public function newPlanSubscription(string $name, Plan $plan, ?Carbon $startDate = null): PlanSubscription
     {
-        return DB::transaction(function () use ($subscription, $plan, $startDate): PlanSubscription {
+        return DB::transaction(function () use ($name, $plan, $startDate): PlanSubscription {
             // Lock the plan row for the duration of the transaction so that concurrent
             // subscribers can't both squeeze past an active_subscribers_limit check.
             if ($plan->hasSubscriberLimit()) {
@@ -108,7 +153,7 @@ trait HasPlanSubscriptions
             $period = new Period($plan->invoice_interval, $plan->invoice_period, $trial->getEndDate());
 
             return $this->planSubscriptions()->create([
-                'name' => $subscription,
+                'name' => $name,
                 'plan_id' => $plan->getKey(),
                 'trial_ends_at' => $plan->hasTrial() ? $trial->getEndDate() : null,
                 'starts_at' => $period->getStartDate(),

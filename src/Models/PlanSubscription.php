@@ -5,14 +5,17 @@ declare(strict_types=1);
 namespace Crumbls\Subscriptions\Models;
 
 use Carbon\Carbon;
+use Crumbls\Subscriptions\Database\Factories\PlanSubscriptionFactory;
 use Crumbls\Subscriptions\Enums\Interval;
 use Crumbls\Subscriptions\Events\SubscriptionCanceled;
 use Crumbls\Subscriptions\Events\SubscriptionCreated;
 use Crumbls\Subscriptions\Events\SubscriptionPlanChanged;
 use Crumbls\Subscriptions\Events\SubscriptionRenewed;
+use Crumbls\Subscriptions\Exceptions\UnknownFeatureException;
 use Crumbls\Subscriptions\Services\Period;
 use Crumbls\Subscriptions\Traits\BelongsToPlan;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -91,6 +94,11 @@ class PlanSubscription extends Model
 
         static::created(fn (self $sub) => SubscriptionCreated::dispatch($sub));
         static::deleted(fn (self $sub) => $sub->usage()->delete());
+    }
+
+    protected static function newFactory(): Factory
+    {
+        return PlanSubscriptionFactory::new();
     }
 
     public function getSlugOptions(): SlugOptions
@@ -296,8 +304,12 @@ class PlanSubscription extends Model
 
     public function recordFeatureUsage(string $featureSlug, int $uses = 1, bool $incremental = true): PlanSubscriptionUsage
     {
-        /** @var Feature $feature */
-        $feature = $this->plan->features()->where('slug', $featureSlug)->firstOrFail();
+        /** @var Feature|null $feature */
+        $feature = $this->plan->features()->where('slug', $featureSlug)->first();
+
+        if (! $feature) {
+            throw new UnknownFeatureException($featureSlug, $this->plan);
+        }
 
         return DB::transaction(function () use ($feature, $uses, $incremental): PlanSubscriptionUsage {
             /** @var PlanSubscriptionUsage $usage */
@@ -382,19 +394,14 @@ class PlanSubscription extends Model
     // ── Internal ─────────────────────────────────────────────────────
 
     protected function setNewPeriod(
-        Interval|string $invoiceInterval = '',
-        int $invoicePeriod = 0,
-        Carbon|string $start = '',
+        ?Interval $invoiceInterval = null,
+        ?int $invoicePeriod = null,
+        ?Carbon $start = null,
     ): static {
-        if (empty($invoiceInterval)) {
-            $invoiceInterval = $this->plan->invoice_interval;
-        }
+        $invoiceInterval ??= $this->plan->invoice_interval;
+        $invoicePeriod ??= $this->plan->invoice_period;
 
-        if ($invoicePeriod === 0) {
-            $invoicePeriod = $this->plan->invoice_period;
-        }
-
-        $period = new Period($invoiceInterval, $invoicePeriod, $start);
+        $period = new Period($invoiceInterval, $invoicePeriod, $start ?? now());
 
         $this->starts_at = $period->getStartDate();
         $this->ends_at = $period->getEndDate();

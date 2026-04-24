@@ -43,7 +43,8 @@
     },
     "autoload": {
         "psr-4": {
-            "Crumbls\\Subscriptions\\": "src"
+            "Crumbls\\Subscriptions\\": "src",
+            "Crumbls\\Subscriptions\\Database\\Factories\\": "database/factories"
         }
     },
     "autoload-dev": {

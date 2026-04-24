@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Crumbls\Subscriptions\Models;
 
 use Carbon\Carbon;
+use Crumbls\Subscriptions\Database\Factories\PlanSubscriptionUsageFactory;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -76,5 +78,10 @@ class PlanSubscriptionUsage extends Model
         }
 
         return Carbon::now()->gte($this->valid_until);
+    }
+
+    protected static function newFactory(): Factory
+    {
+        return PlanSubscriptionUsageFactory::new();
     }
 }

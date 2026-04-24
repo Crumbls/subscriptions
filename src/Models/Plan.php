@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Crumbls\Subscriptions\Models;
 
+use Crumbls\Subscriptions\Database\Factories\PlanFactory;
 use Crumbls\Subscriptions\Enums\Interval;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -97,6 +99,11 @@ class Plan extends Model implements Sortable
             $plan->features()->detach();
             $plan->subscriptions()->delete();
         });
+    }
+
+    protected static function newFactory(): Factory
+    {
+        return PlanFactory::new();
     }
 
     public function getSlugOptions(): SlugOptions

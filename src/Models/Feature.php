@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace Crumbls\Subscriptions\Models;
 
 use Carbon\Carbon;
+use Crumbls\Subscriptions\Database\Factories\FeatureFactory;
 use Crumbls\Subscriptions\Enums\Interval;
 use Crumbls\Subscriptions\Services\Period;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -67,6 +70,11 @@ class Feature extends Model implements Sortable
         static::deleted(fn (Feature $feature) => $feature->usage()->delete());
     }
 
+    protected static function newFactory(): Factory
+    {
+        return FeatureFactory::new();
+    }
+
     public function getSlugOptions(): SlugOptions
     {
         return SlugOptions::create()
@@ -99,5 +107,15 @@ class Feature extends Model implements Sortable
     {
         return (new Period($this->resettable_interval, $this->resettable_period, $dateFrom))
             ->getEndDate();
+    }
+
+    public function scopeBySlug(Builder $builder, string $slug): Builder
+    {
+        return $builder->where('slug', $slug);
+    }
+
+    public function hasReset(): bool
+    {
+        return $this->resettable_period > 0;
     }
 }
