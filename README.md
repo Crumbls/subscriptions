@@ -21,8 +21,11 @@ A flexible plans and subscription management system for Laravel. Manage SaaS pla
 
 ## Requirements
 
-- PHP 8.3+
-- Laravel 11, 12, or 13
+| Package | PHP | Laravel |
+|---|---|---|
+| `2.x` | `8.3`, `8.4` | `11.x`, `12.x`, `13.x` |
+
+All combinations in the matrix above are exercised in CI on every push and pull request.
 
 ## Installation
 
@@ -168,11 +171,45 @@ $enterprise->features()->attach($apiCalls, ['value' => '999999']);
 $enterprise->features()->attach($ssl, ['value' => 'true']);
 ```
 
+### Factories
+
+Every model ships with a factory for testing and seeding:
+
+```php
+use Crumbls\Subscriptions\Models\Plan;
+use Crumbls\Subscriptions\Models\Feature;
+use Crumbls\Subscriptions\Models\PlanSubscription;
+
+Plan::factory()->create();                        // a generic paid plan
+Plan::factory()->free()->create();                // price = 0
+Plan::factory()->paid()->withTrial(14)->create(); // 14-day trial
+Plan::factory()->withGrace(7)->create();          // 7-day grace window
+Plan::factory()->limitedTo(100)->create();        // capped at 100 subscribers
+Plan::factory()->inactive()->create();            // is_active = false
+
+Feature::factory()->resettableMonthly()->create();
+Feature::factory()->resettableDaily()->create();
+
+PlanSubscription::factory()
+    ->for($user, 'subscriber')
+    ->ended()
+    ->canceled()
+    ->create();
+```
+
 ### Subscribe
 
 ```php
+$tenant->subscribe('main', $plan);
+
+// Or the longer-named original:
 $tenant->newPlanSubscription('main', $plan);
+
+// Both take an optional start date:
+$tenant->subscribe('main', $plan, now()->addDay());
 ```
+
+Subscription slugs are unique **per subscriber**, not globally, so both a `User` and a `Tenant` can hold a `main` subscription at the same time.
 
 ### Check subscription status
 
@@ -205,6 +242,8 @@ $subscription->getFeatureUsage('api-requests');     // int — current usage
 $subscription->getFeatureRemainings('api-requests'); // int — remaining quota
 $subscription->getFeatureValue('api-requests');     // raw value from pivot
 ```
+
+If you call `recordFeatureUsage` with a slug that isn't attached to the subscription's plan, it throws `Crumbls\Subscriptions\Exceptions\UnknownFeatureException` — the `featureSlug` and `plan` are exposed as readonly properties on the exception.
 
 #### Enforcing limits (example: user count)
 
@@ -272,6 +311,8 @@ class SendWelcomeEmail
 }
 ```
 
+These events are plain dispatchable events — they do not implement `ShouldBroadcast` out of the box. If you want a broadcast version, extend the event in your application and add `implements ShouldBroadcast` there.
+
 ### Middleware
 
 Gate routes by feature or subscription:
@@ -293,7 +334,7 @@ Route::middleware('subscribed:pro')->group(/* ... */);
 ### Pruning expired subscriptions
 
 ```bash
-php artisan subscriptions:prune              # soft-deletes canceled subs older than 30 days
+php artisan subscriptions:prune              # soft-deletes subs ended more than 30 days ago
 php artisan subscriptions:prune --days=90    # custom threshold
 php artisan subscriptions:prune --force      # skip confirmation
 ```
@@ -313,7 +354,6 @@ Publish the config to customize table names or swap model classes:
 // config/subscriptions.php
 return [
     'autoload_migrations' => true,
-    'broadcast_events' => false,
 
     'tables' => [
         'plans' => 'plans',
@@ -379,6 +419,26 @@ All relationships, scopes, traits, middleware, and the prune command resolve mod
 - **Translatable fields**: `name` and `description` on plans, features, and subscriptions are stored as JSON and support multiple locales via [spatie/laravel-translatable](https://github.com/spatie/laravel-translatable).
 - **Soft deletes**: Plans, features, subscriptions, and usage all use soft deletes. The prune command only soft-deletes; use `forceDelete()` if you need permanent removal.
 - **Features are standalone**: Create a feature once, attach it to multiple plans with different values. This avoids duplicating feature definitions across plans.
+
+## Coming from rinvex/laravel-subscriptions
+
+This package started as a modern reboot of `rinvex/laravel-subscriptions`, so the mental model is similar but a few things are worth knowing if you're porting an existing app:
+
+- **Namespace**: `Crumbls\Subscriptions\...` (was `Rinvex\Subscriptions\...`).
+- **Config key**: `subscriptions` (was `rinvex.subscriptions`).
+- **Subscribing**: prefer `$user->subscribe('main', $plan)` — `newPlanSubscription()` also works. Rinvex's mix of `newSubscription()` / `subscribe()` is unified.
+- **Features are standalone.** Rinvex defines features inline on the plan; here a `Feature` is its own row, and the *value* (limit) lives on the `plan_features` pivot. That's how you get "Basic: 5 users, Pro: 50 users" from a single `users` feature.
+- **No `rinvex:*` artisan commands.** Use plain `php artisan migrate` and `php artisan vendor:publish`.
+- **No model-level validation.** Use Form Requests in your own app.
+- **Events.** Four Laravel events (`SubscriptionCreated`, `SubscriptionCanceled`, `SubscriptionRenewed`, `SubscriptionPlanChanged`) in place of rinvex's trait-based hooks.
+
+## Upgrading
+
+See [`UPGRADING.md`](./UPGRADING.md) for version-to-version migration steps. Breaking changes are called out in [`CHANGELOG.md`](./CHANGELOG.md).
+
+## Contributing
+
+See [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 
 ## License
 
