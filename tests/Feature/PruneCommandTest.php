@@ -60,3 +60,20 @@ it('respects the days option', function (): void {
 
     Carbon::setTestNow();
 });
+
+it('prunes naturally expired subscriptions (never canceled)', function (): void {
+    Carbon::setTestNow('2026-01-01 00:00:00');
+    $subscription = $this->user->newPlanSubscription('main', $this->plan);
+
+    // Plan has a 1-month invoice period, so sub ends 2026-02-01. Fast-forward past
+    // the 30-day pruning threshold beyond that.
+    Carbon::setTestNow('2026-04-01 00:00:00');
+
+    $this->artisan('subscriptions:prune', ['--force' => true])
+        ->expectsOutputToContain('Pruned 1')
+        ->assertSuccessful();
+
+    expect(PlanSubscription::withTrashed()->find($subscription->id)->deleted_at)->not->toBeNull();
+
+    Carbon::setTestNow();
+});

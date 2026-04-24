@@ -32,11 +32,18 @@ abstract class TestCase extends BaseTestCase
     {
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
 
-        // Create a users table for subscriber testing
-        $this->app['db']->connection()->getSchemaBuilder()->create('users', function (Blueprint $table): void {
+        $schema = $this->app['db']->connection()->getSchemaBuilder();
+
+        $schema->create('users', function (Blueprint $table): void {
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
+            $table->timestamps();
+        });
+
+        $schema->create('teams', function (Blueprint $table): void {
+            $table->id();
+            $table->string('name');
             $table->timestamps();
         });
     }

@@ -123,3 +123,66 @@ it('returns json 403 for api requests when feature unavailable', function () {
     expect($response->getStatusCode())->toBe(403)
         ->and($response->getContent())->toContain('api-calls');
 });
+
+// ── Edge cases ──────────────────────────────────────────
+
+it('denies SubscribedTo when the request has no authenticated user', function () {
+    $request = Request::create('/test', 'GET');
+    $request->setUserResolver(fn () => null);
+    $request->headers->set('Accept', 'application/json');
+
+    $middleware = new SubscribedTo;
+    $response = $middleware->handle($request, passThrough());
+
+    expect($response->getStatusCode())->toBe(403);
+});
+
+it('denies CanUseFeature when the user lacks the HasPlanSubscriptions trait', function () {
+    $request = Request::create('/test', 'GET');
+    $request->setUserResolver(fn () => new \Illuminate\Foundation\Auth\User);
+    $request->headers->set('Accept', 'application/json');
+
+    $middleware = new CanUseFeature;
+    $response = $middleware->handle($request, passThrough(), 'api-calls');
+
+    expect($response->getStatusCode())->toBe(403);
+});
+
+it('denies CanUseFeature when a specific subscription slug cannot be found', function () {
+    $this->user->newPlanSubscription('main', $this->plan);
+    $request = makeRequest($this->user);
+    $request->headers->set('Accept', 'application/json');
+
+    $middleware = new CanUseFeature;
+    $response = $middleware->handle($request, passThrough(), 'api-calls', 'does-not-exist');
+
+    expect($response->getStatusCode())->toBe(403);
+});
+
+it('allows CanUseFeature on a subscription still in its grace period', function () {
+    $gracePlan = Plan::factory()->create([
+        'name' => 'Grace',
+        'invoice_period' => 1,
+        'invoice_interval' => 'month',
+        'grace_period' => 7,
+        'grace_interval' => 'day',
+    ]);
+    $gracePlan->features()->create([
+        'name' => 'SSL',
+        'slug' => 'ssl',
+    ], ['value' => 'true']);
+
+    \Carbon\Carbon::setTestNow('2026-01-01 00:00:00');
+    $sub = $this->user->newPlanSubscription('main', $gracePlan);
+
+    // Jump to 3 days after natural end — still in grace
+    \Carbon\Carbon::setTestNow('2026-02-04 00:00:00');
+    expect($sub->fresh()->onGracePeriod())->toBeTrue();
+
+    $middleware = new CanUseFeature;
+    $response = $middleware->handle(makeRequest($this->user), passThrough(), 'ssl');
+
+    expect($response->getStatusCode())->toBe(200);
+
+    \Carbon\Carbon::setTestNow();
+});
