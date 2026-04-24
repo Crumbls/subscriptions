@@ -17,7 +17,7 @@ return new class extends Migration
                 ->constrained(config('subscriptions.tables.plans', 'plans'))
                 ->cascadeOnDelete()
                 ->cascadeOnUpdate();
-            $table->string('slug')->unique();
+            $table->string('slug');
             $table->json('name');
             $table->json('description')->nullable();
             $table->timestamp('trial_ends_at')->nullable();
@@ -27,6 +27,9 @@ return new class extends Migration
             $table->timestamp('canceled_at')->nullable();
             $table->timestamps();
             $table->softDeletes();
+
+            $table->unique(['subscriber_type', 'subscriber_id', 'slug']);
+            $table->index('ends_at');
         });
     }
 

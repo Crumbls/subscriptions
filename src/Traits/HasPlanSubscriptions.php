@@ -11,6 +11,7 @@ use Crumbls\Subscriptions\Models\PlanSubscription;
 use Crumbls\Subscriptions\Services\Period;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Facades\DB;
 
 trait HasPlanSubscriptions
 {
@@ -88,23 +89,31 @@ trait HasPlanSubscriptions
      */
     public function newPlanSubscription(string $subscription, Plan $plan, ?Carbon $startDate = null): PlanSubscription
     {
-        if (! $plan->canAcceptNewSubscriber()) {
-            throw new SubscriberLimitReachedException(
-                $plan,
-                $plan->active_subscribers_limit,
-                $plan->activeSubscriberCount(),
-            );
-        }
+        return DB::transaction(function () use ($subscription, $plan, $startDate): PlanSubscription {
+            // Lock the plan row for the duration of the transaction so that concurrent
+            // subscribers can't both squeeze past an active_subscribers_limit check.
+            if ($plan->hasSubscriberLimit()) {
+                $plan = $plan->newQuery()->lockForUpdate()->findOrFail($plan->getKey());
+            }
 
-        $trial = new Period($plan->trial_interval ?? 'day', $plan->trial_period ?? 0, $startDate ?? now());
-        $period = new Period($plan->invoice_interval, $plan->invoice_period, $trial->getEndDate());
+            if (! $plan->canAcceptNewSubscriber()) {
+                throw new SubscriberLimitReachedException(
+                    $plan,
+                    $plan->active_subscribers_limit,
+                    $plan->activeSubscriberCount(),
+                );
+            }
 
-        return $this->planSubscriptions()->create([
-            'name' => $subscription,
-            'plan_id' => $plan->getKey(),
-            'trial_ends_at' => $plan->hasTrial() ? $trial->getEndDate() : null,
-            'starts_at' => $period->getStartDate(),
-            'ends_at' => $period->getEndDate(),
-        ]);
+            $trial = new Period($plan->trial_interval ?? 'day', $plan->trial_period ?? 0, $startDate ?? now());
+            $period = new Period($plan->invoice_interval, $plan->invoice_period, $trial->getEndDate());
+
+            return $this->planSubscriptions()->create([
+                'name' => $subscription,
+                'plan_id' => $plan->getKey(),
+                'trial_ends_at' => $plan->hasTrial() ? $trial->getEndDate() : null,
+                'starts_at' => $period->getStartDate(),
+                'ends_at' => $period->getEndDate(),
+            ]);
+        });
     }
 }

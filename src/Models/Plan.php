@@ -32,9 +32,6 @@ use Spatie\Translatable\HasTranslations;
  * @property Interval $invoice_interval
  * @property int $grace_period
  * @property Interval|null $grace_interval
- * @property int|null $prorate_day
- * @property int|null $prorate_period
- * @property int|null $prorate_extend_due
  * @property int|null $active_subscribers_limit
  * @property int $sort_order
  * @property \Carbon\Carbon|null $created_at
@@ -59,9 +56,6 @@ class Plan extends Model implements Sortable
         'invoice_interval',
         'grace_period',
         'grace_interval',
-        'prorate_day',
-        'prorate_period',
-        'prorate_extend_due',
         'active_subscribers_limit',
         'sort_order',
     ];
@@ -92,9 +86,6 @@ class Plan extends Model implements Sortable
             'invoice_interval' => Interval::class,
             'grace_period' => 'integer',
             'grace_interval' => Interval::class,
-            'prorate_day' => 'integer',
-            'prorate_period' => 'integer',
-            'prorate_extend_due' => 'integer',
             'active_subscribers_limit' => 'integer',
             'sort_order' => 'integer',
         ];

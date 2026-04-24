@@ -25,9 +25,6 @@ return new class extends Migration
             $table->string('invoice_interval')->default('month');
             $table->unsignedSmallInteger('grace_period')->default(0);
             $table->string('grace_interval')->default('day');
-            $table->unsignedTinyInteger('prorate_day')->nullable();
-            $table->unsignedTinyInteger('prorate_period')->nullable();
-            $table->unsignedTinyInteger('prorate_extend_due')->nullable();
             $table->unsignedSmallInteger('active_subscribers_limit')->nullable();
             $table->unsignedMediumInteger('sort_order')->default(0);
             $table->timestamps();

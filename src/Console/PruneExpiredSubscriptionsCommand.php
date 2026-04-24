@@ -19,10 +19,10 @@ class PruneExpiredSubscriptionsCommand extends Command
         $days = (int) $this->option('days');
         $model = config('subscriptions.models.plan_subscription');
 
-        $count = $model::where('ends_at', '<=', now()->subDays($days))
-            ->whereNotNull('canceled_at')
-            ->whereNull('deleted_at')
-            ->count();
+        $query = fn () => $model::where('ends_at', '<=', now()->subDays($days))
+            ->whereNull('deleted_at');
+
+        $count = $query()->count();
 
         if ($count === 0) {
             $this->info('No expired subscriptions to prune.');
@@ -34,10 +34,7 @@ class PruneExpiredSubscriptionsCommand extends Command
             return self::SUCCESS;
         }
 
-        $model::where('ends_at', '<=', now()->subDays($days))
-            ->whereNotNull('canceled_at')
-            ->whereNull('deleted_at')
-            ->each(fn ($sub) => $sub->delete());
+        $query()->each(fn ($sub) => $sub->delete());
 
         $this->info("Pruned {$count} expired subscription(s).");
 

@@ -98,7 +98,10 @@ class PlanSubscription extends Model
         return SlugOptions::create()
             ->doNotGenerateSlugsOnUpdate()
             ->generateSlugsFrom('name')
-            ->saveSlugsTo('slug');
+            ->saveSlugsTo('slug')
+            ->extraScope(fn ($query) => $query
+                ->where('subscriber_type', $this->subscriber_type)
+                ->where('subscriber_id', $this->subscriber_id));
     }
 
     // ── Relationships ────────────────────────────────────────────────
@@ -121,16 +124,11 @@ class PlanSubscription extends Model
 
     public function active(): bool
     {
-        if ($this->ended() && $this->canceled()) {
+        if ($this->canceled() && $this->ended()) {
             return false;
         }
-        if (! $this->ended()) {
-            return true;
-        }
-        if ($this->onTrial()) {
-            return true;
-        }
-        return $this->onGracePeriod();
+
+        return ! $this->ended() || $this->onGracePeriod();
     }
 
     public function inactive(): bool
@@ -301,39 +299,43 @@ class PlanSubscription extends Model
         /** @var Feature $feature */
         $feature = $this->plan->features()->where('slug', $featureSlug)->firstOrFail();
 
-        /** @var PlanSubscriptionUsage $usage */
-        $usage = $this->usage()->firstOrNew([
-            'subscription_id' => $this->getKey(),
-            'feature_id' => $feature->getKey(),
-        ]);
+        return DB::transaction(function () use ($feature, $uses, $incremental): PlanSubscriptionUsage {
+            /** @var PlanSubscriptionUsage $usage */
+            $usage = $this->usage()->lockForUpdate()->firstOrNew([
+                'subscription_id' => $this->getKey(),
+                'feature_id' => $feature->getKey(),
+            ]);
 
-        if ($feature->resettable_period) {
-            if (is_null($usage->valid_until)) {
-                $usage->valid_until = $feature->getResetDate($this->created_at);
-            } elseif ($usage->expired()) {
-                $usage->valid_until = $feature->getResetDate($usage->valid_until);
-                $usage->used = 0;
+            if ($feature->resettable_period) {
+                if (is_null($usage->valid_until)) {
+                    $usage->valid_until = $feature->getResetDate($this->created_at);
+                } elseif ($usage->expired()) {
+                    $usage->valid_until = $feature->getResetDate($usage->valid_until);
+                    $usage->used = 0;
+                }
             }
-        }
 
-        $usage->used = $incremental ? $usage->used + $uses : $uses;
-        $usage->save();
+            $usage->used = $incremental ? $usage->used + $uses : $uses;
+            $usage->save();
 
-        return $usage;
+            return $usage;
+        });
     }
 
     public function reduceFeatureUsage(string $featureSlug, int $uses = 1): ?PlanSubscriptionUsage
     {
-        $usage = $this->usage()->byFeatureSlug($featureSlug)->first();
+        return DB::transaction(function () use ($featureSlug, $uses): ?PlanSubscriptionUsage {
+            $usage = $this->usage()->byFeatureSlug($featureSlug)->lockForUpdate()->first();
 
-        if (! $usage) {
-            return null;
-        }
+            if (! $usage) {
+                return null;
+            }
 
-        $usage->used = max($usage->used - $uses, 0);
-        $usage->save();
+            $usage->used = max($usage->used - $uses, 0);
+            $usage->save();
 
-        return $usage;
+            return $usage;
+        });
     }
 
     public function canUseFeature(string $featureSlug): bool

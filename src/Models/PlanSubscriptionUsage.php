@@ -60,10 +60,13 @@ class PlanSubscriptionUsage extends Model
 
     public function scopeByFeatureSlug(Builder $builder, string $featureSlug): Builder
     {
+        /** @var class-string<Feature> $model */
         $model = config('subscriptions.models.feature', Feature::class);
-        $feature = $model::where('slug', $featureSlug)->first();
 
-        return $builder->where('feature_id', $feature?->getKey());
+        return $builder->whereIn(
+            'feature_id',
+            $model::query()->where('slug', $featureSlug)->select('id'),
+        );
     }
 
     public function expired(): bool
