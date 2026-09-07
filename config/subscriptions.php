@@ -10,7 +10,7 @@ return [
     // Database table names
     'tables' => [
         'plans' => 'plans',
-        'features' => 'features',
+        'features' => 'subscription_features',
         'plan_features' => 'plan_features',
         'plan_subscriptions' => 'plan_subscriptions',
         'plan_subscription_usage' => 'plan_subscription_usage',

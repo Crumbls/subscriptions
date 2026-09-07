@@ -15,7 +15,7 @@ it('creates plans with sensible defaults', function (): void {
 });
 
 it('supports state methods on PlanFactory', function (): void {
-    expect(Plan::factory()->free()->make()->price)->toBe('0.00');
+    expect(Plan::factory()->free()->make()->price)->toBe(0);
     expect(Plan::factory()->withTrial(30)->make()->trial_period)->toBe(30);
     expect(Plan::factory()->withGrace(14)->make()->grace_period)->toBe(14);
     expect(Plan::factory()->limitedTo(5)->make()->active_subscribers_limit)->toBe(5);

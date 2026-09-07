@@ -11,7 +11,7 @@ beforeEach(function (): void {
 it('treats subscription as active during grace period', function (): void {
     $plan = Plan::create([
         'name' => 'Grace Plan',
-        'price' => 10,
+        'price' => 1000,
         'signup_fee' => 0,
         'currency' => 'USD',
         'invoice_period' => 1,
@@ -42,7 +42,7 @@ it('treats subscription as active during grace period', function (): void {
 it('returns false for onGracePeriod when plan has no grace', function (): void {
     $plan = Plan::create([
         'name' => 'No Grace',
-        'price' => 10,
+        'price' => 1000,
         'signup_fee' => 0,
         'currency' => 'USD',
         'invoice_period' => 1,
@@ -62,7 +62,7 @@ it('returns false for onGracePeriod when plan has no grace', function (): void {
 it('does not apply grace period to canceled+ended subscriptions', function (): void {
     $plan = Plan::create([
         'name' => 'Grace Cancel',
-        'price' => 10,
+        'price' => 1000,
         'signup_fee' => 0,
         'currency' => 'USD',
         'invoice_period' => 1,

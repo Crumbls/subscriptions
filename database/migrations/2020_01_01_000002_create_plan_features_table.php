@@ -10,14 +10,13 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create(config('subscriptions.tables.features', 'features'), function (Blueprint $table) {
+        Schema::create(config('subscriptions.tables.features', 'subscription_features'), function (Blueprint $table) {
             $table->id();
             $table->string('slug')->unique();
             $table->json('name');
             $table->json('description')->nullable();
             $table->unsignedSmallInteger('resettable_period')->default(0);
             $table->string('resettable_interval')->default('month');
-            $table->unsignedMediumInteger('sort_order')->default(0);
             $table->timestamps();
             $table->softDeletes();
         });

@@ -27,7 +27,7 @@ class PlanFactory extends Factory
         return [
             'name' => $this->faker->unique()->words(2, true),
             'description' => $this->faker->sentence(),
-            'price' => $this->faker->randomFloat(2, 0, 499),
+            'price' => $this->faker->numberBetween(0, 49900),
             'signup_fee' => 0,
             'currency' => 'USD',
             'trial_period' => 0,
@@ -46,7 +46,7 @@ class PlanFactory extends Factory
 
     public function paid(): static
     {
-        return $this->state(['price' => $this->faker->randomFloat(2, 1, 499)]);
+        return $this->state(['price' => $this->faker->numberBetween(100, 49900)]);
     }
 
     public function withTrial(int $days = 14): static

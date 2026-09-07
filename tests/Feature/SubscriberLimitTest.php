@@ -7,7 +7,7 @@ use Crumbls\Subscriptions\Tests\Fixtures\User;
 it('allows subscription when no limit is set', function () {
     $plan = Plan::create([
         'name' => 'Unlimited',
-        'price' => 10,
+        'price' => 1000,
         'signup_fee' => 0,
         'currency' => 'USD',
         'invoice_period' => 1,
@@ -29,7 +29,7 @@ it('allows subscription when no limit is set', function () {
 it('enforces subscriber limit', function () {
     $plan = Plan::create([
         'name' => 'Limited',
-        'price' => 10,
+        'price' => 1000,
         'signup_fee' => 0,
         'currency' => 'USD',
         'invoice_period' => 1,
@@ -58,7 +58,7 @@ it('enforces subscriber limit', function () {
 it('frees a slot when a subscription is canceled immediately', function () {
     $plan = Plan::create([
         'name' => 'Limited',
-        'price' => 10,
+        'price' => 1000,
         'signup_fee' => 0,
         'currency' => 'USD',
         'invoice_period' => 1,
@@ -84,7 +84,7 @@ it('frees a slot when a subscription is canceled immediately', function () {
 it('includes the plan and counts in the exception', function () {
     $plan = Plan::create([
         'name' => 'Tiny',
-        'price' => 10,
+        'price' => 1000,
         'signup_fee' => 0,
         'currency' => 'USD',
         'invoice_period' => 1,

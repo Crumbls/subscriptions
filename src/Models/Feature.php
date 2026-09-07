@@ -15,8 +15,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Spatie\EloquentSortable\Sortable;
-use Spatie\EloquentSortable\SortableTrait;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 use Spatie\Translatable\HasTranslations;
@@ -28,14 +26,13 @@ use Spatie\Translatable\HasTranslations;
  * @property array|null $description
  * @property int $resettable_period
  * @property Interval|null $resettable_interval
- * @property int $sort_order
  * @property \Carbon\Carbon|null $created_at
  * @property \Carbon\Carbon|null $updated_at
  * @property \Carbon\Carbon|null $deleted_at
  */
-class Feature extends Model implements Sortable
+class Feature extends Model
 {
-    use HasFactory, HasSlug, HasTranslations, SoftDeletes, SortableTrait;
+    use HasFactory, HasSlug, HasTranslations, SoftDeletes;
 
     protected $fillable = [
         'slug',
@@ -43,12 +40,9 @@ class Feature extends Model implements Sortable
         'description',
         'resettable_period',
         'resettable_interval',
-        'sort_order',
     ];
 
     public array $translatable = ['name', 'description'];
-
-    public array $sortable = ['order_column_name' => 'sort_order'];
 
     public function __construct(array $attributes = [])
     {
@@ -61,7 +55,6 @@ class Feature extends Model implements Sortable
         return [
             'resettable_period' => 'integer',
             'resettable_interval' => Interval::class,
-            'sort_order' => 'integer',
         ];
     }
 

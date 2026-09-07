@@ -9,7 +9,7 @@ beforeEach(function (): void {
     $this->user = User::create(['name' => 'Test', 'email' => 'test@example.com']);
     $this->plan = Plan::create([
         'name' => 'Pro',
-        'price' => 10,
+        'price' => 1000,
         'signup_fee' => 0,
         'currency' => 'USD',
         'invoice_period' => 1,

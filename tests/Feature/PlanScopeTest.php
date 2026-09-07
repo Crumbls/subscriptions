@@ -4,8 +4,8 @@ use Crumbls\Subscriptions\Models\Plan;
 
 beforeEach(function () {
     Plan::create(['name' => 'Free', 'price' => 0, 'signup_fee' => 0, 'currency' => 'USD', 'invoice_period' => 1, 'invoice_interval' => 'month']);
-    Plan::create(['name' => 'Pro', 'price' => 10, 'signup_fee' => 0, 'currency' => 'USD', 'invoice_period' => 1, 'invoice_interval' => 'month']);
-    Plan::create(['name' => 'Disabled', 'price' => 5, 'signup_fee' => 0, 'currency' => 'USD', 'invoice_period' => 1, 'invoice_interval' => 'month', 'is_active' => false]);
+    Plan::create(['name' => 'Pro', 'price' => 1000, 'signup_fee' => 0, 'currency' => 'USD', 'invoice_period' => 1, 'invoice_interval' => 'month']);
+    Plan::create(['name' => 'Disabled', 'price' => 500, 'signup_fee' => 0, 'currency' => 'USD', 'invoice_period' => 1, 'invoice_interval' => 'month', 'is_active' => false]);
 });
 
 it('scopes active plans', function () {

@@ -6,6 +6,7 @@ namespace Crumbls\Subscriptions\Models;
 
 use Crumbls\Subscriptions\Database\Factories\PlanFactory;
 use Crumbls\Subscriptions\Enums\Interval;
+use Crumbls\Subscriptions\Services\CurrencyService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -25,8 +26,8 @@ use Spatie\Translatable\HasTranslations;
  * @property array $name
  * @property array|null $description
  * @property bool $is_active
- * @property string $price
- * @property string $signup_fee
+ * @property int $price
+ * @property int $signup_fee
  * @property string $currency
  * @property int $trial_period
  * @property Interval|null $trial_interval
@@ -80,8 +81,8 @@ class Plan extends Model implements Sortable
     {
         return [
             'is_active' => 'boolean',
-            'price' => 'decimal:2',
-            'signup_fee' => 'decimal:2',
+            'price' => 'integer',
+            'signup_fee' => 'integer',
             'trial_period' => 'integer',
             'trial_interval' => Interval::class,
             'invoice_period' => 'integer',
@@ -163,7 +164,27 @@ class Plan extends Model implements Sortable
 
     public function isFree(): bool
     {
-        return (float) $this->price <= 0.00;
+        return $this->price <= 0;
+    }
+
+    public function priceDecimal(): string
+    {
+        return app(CurrencyService::class)->fromMinor($this->price, $this->currency);
+    }
+
+    public function signupFeeDecimal(): string
+    {
+        return app(CurrencyService::class)->fromMinor($this->signup_fee, $this->currency);
+    }
+
+    public function formattedPrice(?string $locale = null): string
+    {
+        return app(CurrencyService::class)->format($this->price, $this->currency, $locale);
+    }
+
+    public function formattedSignupFee(?string $locale = null): string
+    {
+        return app(CurrencyService::class)->format($this->signup_fee, $this->currency, $locale);
     }
 
     public function hasTrial(): bool

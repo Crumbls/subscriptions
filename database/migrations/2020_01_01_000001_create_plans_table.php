@@ -16,8 +16,8 @@ return new class extends Migration
             $table->json('name');
             $table->json('description')->nullable();
             $table->boolean('is_active')->default(true);
-            $table->decimal('price')->default(0);
-            $table->decimal('signup_fee')->default(0);
+            $table->unsignedBigInteger('price')->default(0);
+            $table->unsignedBigInteger('signup_fee')->default(0);
             $table->string('currency', 3);
             $table->unsignedSmallInteger('trial_period')->default(0);
             $table->string('trial_interval')->default('day');

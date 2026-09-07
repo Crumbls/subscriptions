@@ -13,7 +13,7 @@ beforeEach(function (): void {
     $this->user = User::create(['name' => 'Test', 'email' => 'test@example.com']);
     $this->plan = Plan::create([
         'name' => 'Pro',
-        'price' => 9.99,
+        'price' => 999,
         'signup_fee' => 0,
         'currency' => 'USD',
         'invoice_period' => 1,
@@ -66,7 +66,7 @@ it('fires SubscriptionPlanChanged when changing plans', function (): void {
 
     $newPlan = Plan::create([
         'name' => 'Enterprise',
-        'price' => 49.99,
+        'price' => 4999,
         'signup_fee' => 0,
         'currency' => 'USD',
         'invoice_period' => 1,

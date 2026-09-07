@@ -8,7 +8,7 @@ beforeEach(function () {
     $this->user = User::create(['name' => 'Test', 'email' => 'test@example.com']);
     $this->plan = Plan::create([
         'name' => 'Pro',
-        'price' => 10,
+        'price' => 1000,
         'signup_fee' => 0,
         'currency' => 'USD',
         'invoice_period' => 1,
@@ -62,7 +62,7 @@ it('reports days until trial end', function () {
 
     $trialPlan = Plan::create([
         'name' => 'Trial',
-        'price' => 10,
+        'price' => 1000,
         'signup_fee' => 0,
         'currency' => 'USD',
         'invoice_period' => 1,
